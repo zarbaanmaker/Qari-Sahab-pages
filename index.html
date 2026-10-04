@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qari Sahab Academy</title>
+<style>
+:root{--bg:#f3f7f4;--ink:#13261d;--green:#0f5c3a;--gold:#b8892b;--card:#fff;--line:#d3e0d8;--red:#a63d2f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--ink:#e6f0ea;--green:#3fbf86;--gold:#e0b552;--card:#16271f;--line:#2a4034;--red:#e57b6b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Georgia,serif}
+.top{display:flex;justify-content:space-between;padding:.5rem 1rem;font-size:.8rem;background:var(--green);color:#fff}
+header{padding:1.8rem 1.2rem 1.2rem;text-align:center;border-bottom:3px solid var(--gold)}
+h1{margin:0;font-size:2rem;color:var(--green)}
+.ar{font-size:2rem;margin:.3rem 0;color:var(--gold);font-family:"Amiri","Noto Naskh Arabic",serif}
+main{max-width:520px;margin:0 auto;padding:1.2rem}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1.2rem}
+.tabs{display:flex;gap:.5rem;margin-bottom:1rem}
+.tabs button{flex:1;background:none;border:0;border-bottom:2px solid var(--line);padding:.6rem;font:inherit;color:var(--ink);cursor:pointer}
+.tabs .on{border-color:var(--green);color:var(--green);font-weight:bold}
+input,textarea,select{width:100%;padding:.7rem;margin:.35rem 0;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+button{font:inherit}
+.main-btn{width:100%;padding:.75rem;margin-top:.5rem;background:var(--green);color:#fff;border:0;border-radius:6px;cursor:pointer}
+.ghost{margin-top:1rem;background:none;border:1px solid var(--line);padding:.5rem 1rem;border-radius:6px;color:var(--ink);cursor:pointer}
+.del{float:right;background:none;border:0;color:var(--red);cursor:pointer}
+#msg{min-height:1.4em;color:var(--red);margin:.5rem 0 0}
+#sid{color:var(--gold);font-weight:bold;margin:0}
+ul{padding:0;list-style:none}
+li{padding:.7rem 0;border-bottom:1px solid var(--line)}
+li p{margin:.2rem 0}
+small{color:var(--gold)}
+.badge{display:inline-block;padding:0 .5rem;border-radius:4px;font-size:.75rem;color:#fff;background:var(--green)}
+.badge.visit{background:var(--gold)}.badge.holiday,.badge.bad{background:var(--red)}
+#admin{border:1px dashed var(--gold);border-radius:8px;padding:.8rem;margin:1rem 0}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="top"><span>Developed by Zarbaan</span><span>Master: Qari Sahab</span></div>
+<header>
+  <h1>Qari Sahab Academy</h1>
+  <p class="ar" lang="ar" dir="rtl">اقرأ باسم ربك</p>
+  <p>Learn Quran with tajweed, online, at your own pace.</p>
+</header>
+<main>
+  <section id="auth">
+    <div class="tabs">
+      <button id="tab-in" class="on">Sign in</button>
+      <button id="tab-up">Create account</button>
+    </div>
+    <form id="form">
+      <input id="name" placeholder="Full name" hidden autocomplete="name">
+      <input id="email" type="email" placeholder="Email" required autocomplete="email">
+      <input id="password" type="password" placeholder="Password (6+ characters)" required minlength="6">
+      <button id="submit" class="main-btn" type="submit">Sign in</button>
+      <p id="msg" role="status"></p>
+    </form>
+  </section>
+
+  <section id="dash" hidden>
+    <h2 id="hello"></h2>
+    <p id="sid"></p>
+
+    <div id="admin" hidden>
+      <h3>Post a notice to everyone</h3>
+      <select id="ntype">
+        <option value="visit">I am coming to your home</option>
+        <option value="holiday">Holiday</option>
+        <option value="general">General notice</option>
+      </select>
+      <input id="ntitle" placeholder="Title (example: Visit tomorrow 5 PM)">
+      <textarea id="nbody" placeholder="Message"></textarea>
+      <button id="nadd" class="main-btn">Post notice</button>
+
+      <h3>Student</h3>
+      <select id="stud"></select>
+
+      <h3>Send sabaq</h3>
+      <textarea id="sbody" placeholder="Sabaq, page, ayah range, homework"></textarea>
+      <button id="sadd" class="main-btn">Send sabaq</button>
+
+      <h3>Attendance and fee</h3>
+      <input id="rdate" type="date">
+      <select id="rstatus">
+        <option value="present">Present</option>
+        <option value="absent">Absent</option>
+        <option value="feepaid">Fee paid</option>
+        <option value="feedue">Fee due</option>
+      </select>
+      <button id="radd" class="main-btn">Save record</button>
+    </div>
+
+    <h3>Notices</h3>
+    <ul id="notices"></ul>
+    <h3 id="sh">My sabaq</h3>
+    <ul id="mine"></ul>
+    <h3 id="rh">My attendance and fee</h3>
+    <p id="sum"></p>
+    <ul id="recs"></ul>
+    <button id="out" class="ghost">Sign out</button>
+  </section>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, onSnapshot, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 1) PASTE YOUR FIREBASE CONFIG HERE
+const firebaseConfig = {
+  apiKey: "PASTE_HERE",
+  authDomain: "PASTE_HERE",
+  projectId: "PASTE_HERE",
+  appId: "PASTE_HERE"
+};
+// 2) QARI SAHAB'S EMAIL (the only admin)
+const ADMIN_EMAIL = "qari@example.com";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app), db = getFirestore(app);
+const $ = id => document.getElementById(id);
+const sid = uid => "QS-" + uid.slice(0, 6).toUpperCase();
+let signup = false, unsubs = [], isAdmin = false;
+
+function setMode(up) {
+  signup = up;
+  $("name").hidden = !up;
+  $("name").required = up;
+  $("tab-up").classList.toggle("on", up);
+  $("tab-in").classList.toggle("on", !up);
+  $("submit").textContent = up ? "Create account" : "Sign in";
+  $("msg").textContent = "";
+}
+$("tab-in").onclick = () => setMode(false);
+$("tab-up").onclick = () => setMode(true);
+
+const errors = {
+  "auth/invalid-credential": "Email or password is wrong.",
+  "auth/email-already-in-use": "This email is already registered. Sign in instead.",
+  "auth/weak-password": "Use a password of 6 or more characters.",
+  "auth/invalid-email": "Enter a valid email.",
+  "auth/network-request-failed": "No internet. Check your connection."
+};
+
+$("form").onsubmit = async e => {
+  e.preventDefault();
+  $("msg").textContent = "";
+  const email = $("email").value.trim(), pw = $("password").value;
+  try {
+    if (signup) {
+      const name = $("name").value.trim();
+      const c = await createUserWithEmailAndPassword(auth, email, pw);
+      await updateProfile(c.user, { displayName: name });
+      await setDoc(doc(db, "users", c.user.uid), { name, email, studentId: sid(c.user.uid) });
+    } else {
+      await signInWithEmailAndPassword(auth, email, pw);
+    }
+  } catch (err) {
+    $("msg").textContent = errors[err.code] || "Something went wrong. Try again.";
+  }
+};
+
+function when(ts) { return ts ? ts.toDate().toLocaleString() : ""; }
+const newest = (a, b) => (b.data().ts?.seconds || 9e9) - (a.data().ts?.seconds || 9e9);
+
+function item(title, text, ts, type, onDelete, label) {
+  const li = document.createElement("li");
+  if (onDelete) {
+    const d = document.createElement("button");
+    d.className = "del"; d.textContent = "Delete"; d.onclick = onDelete;
+    li.append(d);
+  }
+  if (type) {
+    const b = document.createElement("span");
+    b.className = "badge " + type;
+    b.textContent = label || { visit: "Visit", holiday: "Holiday", general: "Notice" }[type];
+    li.append(b, " ");
+  }
+  const s = document.createElement("strong"); s.textContent = title;
+  const p = document.createElement("p"); p.textContent = text;
+  const t = document.createElement("small"); t.textContent = when(ts);
+  li.append(s, p, t);
+  return li;
+}
+
+function fill(ul, items, empty) {
+  ul.innerHTML = "";
+  if (!items.length) { const li = document.createElement("li"); li.textContent = empty; ul.append(li); }
+  items.forEach(i => ul.append(i));
+}
+
+const RLABEL = { present: "Present", absent: "Absent", feepaid: "Fee paid", feedue: "Fee due" };
+const RTYPE = { present: "", absent: "bad", feepaid: "", feedue: "bad" };
+
+onAuthStateChanged(auth, user => {
+  unsubs.forEach(f => f()); unsubs = [];
+  if (!user) { $("dash").hidden = true; $("auth").hidden = false; return; }
+  isAdmin = user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  $("auth").hidden = true; $("dash").hidden = false;
+  $("admin").hidden = !isAdmin;
+  $("hello").textContent = "Assalamu alaikum, " + (user.displayName || user.email);
+  $("sid").textContent = isAdmin ? "Admin: Qari Sahab" : "Student ID: " + sid(user.uid);
+  $("sh").textContent = isAdmin ? "Sabaq sent" : "My sabaq";
+  $("rh").textContent = isAdmin ? "All attendance and fee records" : "My attendance and fee";
+  $("rdate").value = new Date().toISOString().slice(0, 10);
+
+  unsubs.push(onSnapshot(query(collection(db, "notices"), orderBy("ts", "desc")), snap => {
+    fill($("notices"), snap.docs.map(d => {
+      const n = d.data();
+      return item(n.title, n.body, n.ts, n.type, isAdmin ? () => deleteDoc(d.ref) : null);
+    }), "No notices yet.");
+  }));
+
+  const own = c => isAdmin ? collection(db, c) : query(collection(db, c), where("uid", "==", user.uid));
+
+  unsubs.push(onSnapshot(own("sabaq"), snap => {
+    fill($("mine"), snap.docs.sort(newest).map(d => {
+      const s = d.data();
+      return item(isAdmin ? s.name : "Sabaq", s.body, s.ts, null, isAdmin ? () => deleteDoc(d.ref) : null);
+    }), "No sabaq yet.");
+  }));
+
+  unsubs.push(onSnapshot(own("records"), snap => {
+    const rows = snap.docs.sort(newest);
+    fill($("recs"), rows.map(d => {
+      const r = d.data();
+      return item((isAdmin ? r.name + " - " : "") + r.date, "", r.ts, RTYPE[r.status], isAdmin ? () => deleteDoc(d.ref) : null, RLABEL[r.status]);
+    }), "No records yet.");
+    if (isAdmin) { $("sum").textContent = ""; return; }
+    const att = rows.filter(d => ["present", "absent"].includes(d.data().status));
+    const pres = att.filter(d => d.data().status === "present").length;
+    $("sum").textContent = att.length ? "Present in " + pres + " of " + att.length + " classes" : "";
+  }));
+
+  if (isAdmin) {
+    unsubs.push(onSnapshot(collection(db, "users"), snap => {
+      $("stud").innerHTML = "";
+      snap.docs.filter(d => d.data().email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()).forEach(d => {
+        const o = document.createElement("option");
+        o.value = d.id; o.textContent = d.data().name + " (" + (d.data().studentId || sid(d.id)) + ")";
+        $("stud").append(o);
+      });
+    }));
+  }
+});
+
+function studentName() { const s = $("stud"); return s.options[s.selectedIndex].text; }
+
+$("nadd").onclick = async () => {
+  const title = $("ntitle").value.trim(), body = $("nbody").value.trim();
+  if (!title) return;
+  await addDoc(collection(db, "notices"), { type: $("ntype").value, title, body, ts: serverTimestamp() });
+  $("ntitle").value = $("nbody").value = "";
+};
+
+$("sadd").onclick = async () => {
+  const body = $("sbody").value.trim();
+  if (!body || !$("stud").value) return;
+  await addDoc(collection(db, "sabaq"), { uid: $("stud").value, name: studentName(), body, ts: serverTimestamp() });
+  $("sbody").value = "";
+};
+
+$("radd").onclick = async () => {
+  if (!$("stud").value || !$("rdate").value) return;
+  await addDoc(collection(db, "records"), {
+    uid: $("stud").value, name: studentName(), date: $("rdate").value,
+    status: $("rstatus").value, ts: serverTimestamp()
+  });
+};
+
+$("out").onclick = () => signOut(auth);
+</script>
+</body>
+  </html>
