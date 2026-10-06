@@ -270,5 +270,50 @@ $("radd").onclick = async () => {
 
 $("out").onclick = () => signOut(auth);
 </script>
+  <script type="module">
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+  // आपकी असली Firebase Configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAjhT_...", // (यह Firebase में जैसा था वैसा ही रहेगा)
+    authDomain: "qari-sahab-15ebb.firebaseapp.com",
+    projectId: "qari-sahab-15ebb",
+    storageBucket: "qari-sahab-15ebb.firebasestorage.app",
+    messagingSenderId: "144774805438",
+    appId: "1:144774805438:web:cfbf0d1de954ed8b0e2bef"
+  };
+
+  // Firebase Initialize
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // Sign Up Function
+  window.handleSignUp = function(email, password) {
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        alert("अकाउंट सफलता से बन गया!");
+      })
+      .catch((error) => {
+        alert("गड़बड़: " + error.message);
+      });
+  };
+
+  // Sign In Function
+  window.handleSignIn = function(email, password) {
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        alert("साइन-इन सफल हुआ!");
+      })
+      .catch((error) => {
+        alert("लॉगिन एरर: " + error.message);
+      });
+  };
+</script>
+  
+  
+  </script>
+  
 </body>
   </html>
